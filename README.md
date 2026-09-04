@@ -8,7 +8,7 @@ A minimal hardware-security lab project using:
 
 ## Goal
 
-Create a repeatable STM32 workload, generate a clean trigger on PA0, verify timing with Saleae, and capture the synchronized acquisition window with ChipWhisperer Husky.
+Create a repeatable STM32 workload, generate a clean trigger on PA0, verify timing with Saleae, and capture a synchronized acquisition window with ChipWhisperer Husky.
 
 ## Current wiring
 
@@ -23,7 +23,9 @@ Create a repeatable STM32 workload, generate a clean trigger on PA0, verify timi
 - PA5 / D13 → Saleae D0
 - GND → Saleae GND
 
-The NUCLEO is powered by its own USB connection. Husky target power is not used.
+The NUCLEO is powered from its own USB connection.
+
+Husky target power is not used. At this stage Husky is being used for trigger synchronization and ADC acquisition only; its analog power-measurement path is not yet connected to the STM32.
 
 ## Firmware
 
@@ -37,6 +39,22 @@ The NUCLEO is powered by its own USB connection. Husky target power is not used.
 
 The workload was reduced to 5 loop iterations so the active region fits inside the Husky capture window.
 
+## Build
+
+The project is built with the ARM GNU toolchain.
+
+Build command:
+
+    arm-none-eabi-gcc       -mcpu=cortex-m4 -mthumb       -ffreestanding -nostdlib       -T linker.ld       startup.s main.c       -o trigger.elf
+
+## Flash
+
+The firmware is flashed through the NUCLEO onboard ST-LINK using OpenOCD.
+
+Flash command:
+
+    openocd       -f interface/stlink.cfg       -f target/stm32f4x.cfg       -c "program trigger.elf verify reset exit"
+
 ## Husky capture settings
 
 - ADC samples: 1000
@@ -44,16 +62,18 @@ The workload was reduced to 5 loop iterations so the active region fits inside t
 - Capture window: 25 µs
 - Trigger source: TIO4
 
+The 25 µs window was deliberately chosen to sit just above the measured workload duration of ~18–19 µs, leaving several microseconds of timing margin while keeping the acquisition compact.
+
 ## Verified results
 
 - Saleae confirms PA0 and PA5 timing
-- Short workload is approximately 18–19 µs
+- Short workload duration is ~18–19 µs
 - Husky captures 1000 samples successfully
 - 10 repeated acquisitions complete consistently
-- Current trigger/capture path is working
+- Trigger and acquisition timing are repeatable
 
 ## Next step
 
 Connect the Husky analog measurement input to the STM32 power-measurement path and capture the real power signature of the workload.
 
-The current ADC traces only validate synchronized acquisition; they are not yet meaningful STM32 power traces.
+The current ADC traces validate synchronized acquisition only; they are not yet meaningful STM32 power traces.
