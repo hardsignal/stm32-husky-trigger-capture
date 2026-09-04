@@ -34,7 +34,7 @@ int main(void)
         /* Known repeatable workload */
         result = 0;
 
-        for (volatile uint32_t i = 0; i < 100000; i++)
+        for (volatile uint32_t i = 0; i < 5; i++)
         {
             result += i;
             result ^= 0x12345678;
