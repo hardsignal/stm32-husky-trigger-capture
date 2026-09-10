@@ -1,79 +1,67 @@
-# STM32 Husky Trigger Capture
+# STM32 + ChipWhisperer Husky Trigger and Power Capture
 
-A minimal hardware-security lab project using:
+Hardsignal Labs experiment using an STM32 NUCLEO-F446RE and ChipWhisperer Husky to build and validate a synchronized power-analysis measurement path.
+
+The project progressed from digital trigger validation to real shunt-based analog power capture and controlled A/B experiments.
+
+## Hardware
 
 - STM32 NUCLEO-F446RE
 - ChipWhisperer Husky
 - Saleae Logic 8
-
-## Goal
-
-Create a repeatable STM32 workload, generate a clean trigger on PA0, verify timing with Saleae, and capture a synchronized acquisition window with ChipWhisperer Husky.
-
-## Current wiring
-
-### NUCLEO → Husky
-
-- PA0 / A0 → Husky TIO4
-- GND → Husky GND
-
-### NUCLEO → Saleae
-
-- PA0 / A0 → Saleae D4
-- PA5 / D13 → Saleae D0
-- GND → Saleae GND
+- 10 ohm shunt resistor
+- BB830 breadboard
+- SMA-to-crocodile measurement lead
+- ST-LINK/V2.1 onboard debugger
 
 The NUCLEO is powered from its own USB connection.
 
-Husky target power is not used. At this stage Husky is being used for trigger synchronization and ADC acquisition only; its analog power-measurement path is not yet connected to the STM32.
+Husky target power is not used.
+
+## Digital synchronization
+
+### NUCLEO -> Husky
+
+- PA0 / A0 -> Husky TIO4
+- GND -> Husky GND
+
+### NUCLEO -> Saleae
+
+- PA0 / A0 -> Saleae D4
+- PA5 / D13 -> Saleae D0
+- GND -> Saleae GND
+
+PA0 defines the Husky acquisition trigger.
+
+PA5 marks the firmware region being compared.
+
+## Power measurement
+
+The NUCLEO JP6 / IDD jumper is removed and a 10 ohm shunt is inserted into the MCU supply path.
+
+The Husky MEASURE input observes the voltage developed across the measurement path.
+
+This produces synchronized analog traces of STM32 activity rather than trigger-only captures.
 
 ## Firmware
 
-`main.c` drives:
+Two principal firmware variants are preserved:
 
-- PA0 HIGH as the capture trigger
-- PA5 HIGH as a workload marker
-- a short repeatable arithmetic workload
-- PA5 LOW
-- PA0 LOW
+- `main_workload50.c` - 50-iteration arithmetic workload
+- `main_control_delay277.c` - timing-matched control workload
 
-The workload was reduced to 5 loop iterations so the active region fits inside the Husky capture window.
+The arithmetic workload repeatedly performs addition, XOR and rotation operations.
+
+The control firmware uses a delay selected to approximately match the execution duration of the arithmetic workload.
+
+PA0 surrounds the capture region and PA5 marks the workload/control region.
 
 ## Build
 
-The project is built with the ARM GNU toolchain.
-
-Build command:
-
-    arm-none-eabi-gcc       -mcpu=cortex-m4 -mthumb       -ffreestanding -nostdlib       -T linker.ld       startup.s main.c       -o trigger.elf
-
-## Flash
-
-The firmware is flashed through the NUCLEO onboard ST-LINK using OpenOCD.
-
-Flash command:
-
-    openocd       -f interface/stlink.cfg       -f target/stm32f4x.cfg       -c "program trigger.elf verify reset exit"
-
-## Husky capture settings
-
-- ADC samples: 1000
-- ADC clock: 40 MHz
-- Capture window: 25 µs
-- Trigger source: TIO4
-
-The 25 µs window was deliberately chosen to sit just above the measured workload duration of ~18–19 µs, leaving several microseconds of timing margin while keeping the acquisition compact.
-
-## Verified results
-
-- Saleae confirms PA0 and PA5 timing
-- Short workload duration is ~18–19 µs
-- Husky captures 1000 samples successfully
-- 10 repeated acquisitions complete consistently
-- Trigger and acquisition timing are repeatable
-
-## Next step
-
-Connect the Husky analog measurement input to the STM32 power-measurement path and capture the real power signature of the workload.
-
-The current ADC traces validate synchronized acquisition only; they are not yet meaningful STM32 power traces.
+```bash
+arm-none-eabi-gcc \
+-mcpu=cortex-m4 -mthumb \
+-ffreestanding -nostdlib \
+-T linker.ld \
+startup.s main.c \
+-o trigger.elf
