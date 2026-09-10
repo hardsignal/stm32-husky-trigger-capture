@@ -31,8 +31,15 @@ int main(void)
         /* Workload marker HIGH */
         GPIOA_ODR |= (1U << 5);
 
-        /* Timing-matched control candidate */
-        delay(277);
+        /* Known repeatable workload */
+        result = 0;
+
+        for (volatile uint32_t i = 0; i < 50; i++)
+        {
+            result += i;
+            result ^= 0x12345678;
+            result = (result << 1) | (result >> 31);
+        }
 
         /* Workload marker LOW */
         GPIOA_ODR &= ~(1U << 5);
