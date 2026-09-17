@@ -65,3 +65,8 @@ arm-none-eabi-gcc \
 -T linker.ld \
 startup.s main.c \
 -o trigger.elf
+```
+
+## Experiment notes
+
+- [2026-09-17: differential-shunt measurements](experiments/2026-09-17-differential-shunt.md) — lower observed within-run noise and improved repeat waveform correlation, but arithmetic-specific control/workload separation remains weak-to-moderately reproducible and is not convincingly demonstrated.
