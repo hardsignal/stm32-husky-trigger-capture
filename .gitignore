@@ -1,3 +1,5 @@
-*.elf
-pa0_husky_trace_*.csv
-short_workload_trace.csv
+__pycache__/
+husky_baseline_*/
+scale_control_block*_5traces.csv
+scale_workload_block*_5traces.csv
+workload50_crowbar_connected_disabled*.csv
