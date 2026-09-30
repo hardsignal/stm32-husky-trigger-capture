@@ -221,5 +221,9 @@ controlled USB stability sequence, and deferred direct timing verification.
 Improve Siglent transient capture of the MCU-side rail before changing glitch
 strength further.
 
+Once the proper MCX-to-BNC cable is available, follow the
+[next-session timing-verification runbook](experiments/2026-09-30-next-session-runbook.md)
+to measure Trigger/Glitch Out relative to PA0 before further tuning.
+
 See the [project status and resume checklist](experiments/2026-09-30-project-status.md)
 and [rail-characterization notes](experiments/2026-09-30-rail-droop-characterization.md).
