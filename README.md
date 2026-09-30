@@ -98,6 +98,45 @@ python3 -m py_compile siglent_read.py test_siglent_read.py
 python3 -m unittest -v test_siglent_read
 ```
 
+## Log live Siglent scalars
+
+[siglent_log.py](siglent_log.py) reuses the reader and rail logger directly.
+It reads CH1 MIN/MEAN/RMS and requires a separately measured `--idle` voltage,
+plus operator-reported test metadata. Defaults are `192.168.1.170:5025`; override
+with `--host`/`--port`. Initialize the CSV using `rail_droop_log.py init` first.
+Both modes validate the existing CSV and proposed row. Existing rows are preserved.
+
+Dry-run example (queries the scope, prints the proposed row, does not write CSV):
+
+```bash
+python3 siglent_log.py --offset 200 --repeat 8 --idle 3.20 --oracle PASS --capture false --dry-run --json
+```
+
+Real logging example (replace the illustrative metadata with actual observations):
+
+```bash
+python3 siglent_log.py --offset 200 --repeat 8 --idle 3.20 --output-mode enable_only --hp-state false --lp-state-after-test false --oracle PASS --capture false --notes "Siglent CH1 scalar readings"
+```
+
+Metadata flags do not configure equipment. The helper only issues the reader's
+three measurement queries; it does not control ChipWhisperer, change acquisition
+settings, or fire a glitch. Each invocation reads fresh values, so a later real
+log need not match a dry-run preview. Sequential queries may span acquisitions.
+
+Output distinguishes **Siglent droop = (MEAN - MIN) × 1000 mV** from the stored
+**rail logger droop = (IDLE - MIN) × 1000 mV**. JSON contains `row` (the logger
+fields, with exact decimal strings), `siglent_droop_mv`, `dry_run`, and `csv_path`.
+Notes are preserved as entered; unspecified output/HP/LP states remain `unknown`.
+Live scalar readings do not establish a resolved transient waveform or successful
+fault injection. No existing experiment data is filled in automatically.
+
+Offline checks (mocked equipment and temporary CSV fixtures):
+
+```bash
+python3 -m py_compile siglent_read.py siglent_log.py rail_droop_log.py test_siglent_read.py test_siglent_log.py
+python3 -m unittest -v test_siglent_read test_siglent_log
+```
+
 ## Current findings
 
 - Operator-reported timing validation and rail observations provide a baseline

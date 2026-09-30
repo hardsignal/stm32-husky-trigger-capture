@@ -160,7 +160,8 @@ def initialize():
         print(f"Created: {CSV_PATH}")
 
 
-def add_result(args):
+def add_result(args, *, dry_run=False, quiet=False):
+    """Validate and return one row; optionally preview without appending."""
     rows = read_rows()  # Require init and the exact append schema.
     row = dict(zip(FIELDS, [
         datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -170,9 +171,13 @@ def add_result(args):
         args.oracle, args.capture, args.notes,
     ]))
     validated_rows(rows + [row])  # Reject invalid data before opening for append.
-    with CSV_PATH.open("a", newline="", encoding="utf-8") as stream:
-        csv.DictWriter(stream, fieldnames=FIELDS).writerow(row)
-    print(f"Logged droop {row['droop_mv']} mV to {CSV_PATH}")
+    if not dry_run:
+        with CSV_PATH.open("a", newline="", encoding="utf-8") as stream:
+            csv.DictWriter(stream, fieldnames=FIELDS).writerow(row)
+    if not quiet:
+        action = "Would log" if dry_run else "Logged"
+        print(f"{action} droop {row['droop_mv']} mV to {CSV_PATH}")
+    return row
 
 
 def summarize():
