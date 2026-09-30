@@ -44,6 +44,8 @@ The operator reports a **~159 µs workload-end/oracle landmark** after PA0,
 manually observed near 159.0–159.2 µs. **HS2 timing-only validation** showed an
 event near 159 µs and an approximately 1.1 µs pulse while the physical crowbar
 remained disconnected. See the [timing record](experiments/2026-09-29-oracle-glitch-prep.md).
+The helper's automated analog landmark estimate does not directly measure a PA1
+edge or classify the oracle.
 
 ## Rail-droop characterization
 

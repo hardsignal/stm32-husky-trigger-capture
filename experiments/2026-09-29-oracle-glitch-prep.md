@@ -10,6 +10,8 @@ only been AST syntax-checked, not run against hardware.
   158.5–159.5 µs, timestamped at the later sample. The baseline plot remains
   145–170 µs. A delta below 0.0007 produces a warning without substituting a point.
   Low-gain warnings remain visible; other ADC errors reject the capture.
+  This automated analog landmark is not a direct PA1-edge measurement; the
+  helper does not read or classify the PA1 oracle.
 - HS2 timing-only validation: at a 10 MHz glitch clock, `ext_offset=1590`
   produced an event about 159 µs after PA0. `enable_only`, `repeat=10`
   produced an approximately 1.1 µs observable pulse.
@@ -20,6 +22,9 @@ only been AST syntax-checked, not run against hardware.
 `husky_oracle_glitch_prep.py` reuses the baseline configuration, safety checks,
 and cleanup. It explicitly disables HS2 routing, keeps HP/LP off, checks PLL/MMCM
 locks, validates one clean capture, and prints the prepared settings before
-disabling the engine and disconnecting. Safety readbacks occur at checkpoints;
+attempting to disable the engine and disconnect. If `scope.capture()` raises
+`USBErrorIO`, it instead marks the hardware state unknown, skips FPGA-register
+cleanup, and attempts disconnect only. Cleanup success is not guaranteed.
+Safety readbacks occur at checkpoints;
 they are not continuous monitoring. No crowbar enabling, HS2 glitch routing,
 target-power changes, fault injection, or sweep is implemented.

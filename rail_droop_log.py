@@ -53,8 +53,9 @@ def read_rows(strict=True):
         return rows
 
 
-def validated_rows():
-    rows = read_rows(strict=False)
+def validated_rows(rows=None):
+    if rows is None:
+        rows = read_rows(strict=False)
     droops = []
     for index, row in enumerate(rows, start=1):
         try:
@@ -83,7 +84,10 @@ def validated_rows():
 
 
 def markdown_cell(value):
-    """Escape CSV text for a Markdown table without interpreting its content."""
+    """Escape table-sensitive characters and render newlines as <br>.
+
+    Underscores remain literal in the Markdown source and may render as emphasis.
+    """
     text = escape(str(value), quote=True)
     for character in "\\|`*[]":
         text = text.replace(character, f"&#{ord(character)};")
@@ -128,6 +132,7 @@ def report():
             f"Mean calculated droop: {sum(droops) / len(droops):.3f} mV.", "",
             f"Largest measured droop: {largest} mV, test(s) {largest_tests}.", "",
             f"Baseline: first logged test (#1), calculated droop {droops[0]} mV. "
+            "This reference is not necessarily an unperturbed control. "
             "Each table delta is the test's calculated droop minus this baseline; "
             "a positive delta means a larger measured droop.", "",
         ])
@@ -156,7 +161,7 @@ def initialize():
 
 
 def add_result(args):
-    read_rows()  # Require init and validate the existing schema before appending.
+    rows = read_rows()  # Require init and the exact append schema.
     row = dict(zip(FIELDS, [
         datetime.now(timezone.utc).isoformat(timespec="seconds"),
         args.offset, args.repeat, args.output_mode, args.hp_state,
@@ -164,25 +169,26 @@ def add_result(args):
         args.rms, (args.idle - args.minimum) * 1000,
         args.oracle, args.capture, args.notes,
     ]))
+    validated_rows(rows + [row])  # Reject invalid data before opening for append.
     with CSV_PATH.open("a", newline="", encoding="utf-8") as stream:
         csv.DictWriter(stream, fieldnames=FIELDS).writerow(row)
     print(f"Logged droop {row['droop_mv']} mV to {CSV_PATH}")
 
 
 def summarize():
-    rows = read_rows()
+    rows, droops = validated_rows()
     if not rows:
         print("No tests logged.")
         return
-    droops = [voltage(row["droop_mv"]) for row in rows]
-    writer = csv.DictWriter(sys.stdout, fieldnames=FIELDS, lineterminator="\n")
+    writer = csv.DictWriter(sys.stdout, fieldnames=list(rows[0]), lineterminator="\n")
     writer.writeheader()
     writer.writerows(rows)
     print(f"\nTests: {len(rows)}")
-    print(f"Droop (mV): min={min(droops)}, max={max(droops)}, "
+    print(f"Calculated droop (mV): min={min(droops)}, max={max(droops)}, "
           f"mean={sum(droops) / len(droops):.3f}, "
           f"spread={max(droops) - min(droops)}")
-    print("Droop comparison by logged test (mV; delta from first test):")
+    print("Calculated droop comparison (mV; delta from first logged baseline; "
+          "not necessarily an unperturbed control):")
     for index, (row, droop) in enumerate(zip(rows, droops), start=1):
         print(f"  #{index}: offset={row['ext_offset']}, repeat={row['repeat']}, "
               f"droop={droop}, delta={droop - droops[0]:+.3f}")
@@ -193,7 +199,8 @@ def main():
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("init", help="Create CSV without overwriting existing data")
     add = commands.add_parser("add", help="Append one manually entered result")
-    add.add_argument("--offset", type=nonnegative_int, required=True)
+    add.add_argument("--offset", type=nonnegative_int, required=True,
+                     help="Reported ext_offset, not ADC offset; record clock context in notes")
     add.add_argument("--repeat", type=nonnegative_int, required=True)
     add.add_argument("--idle", type=voltage, required=True, help="Idle rail voltage (V)")
     add.add_argument("--min", dest="minimum", type=voltage, required=True,
@@ -202,7 +209,8 @@ def main():
     add.add_argument("--rms", type=voltage, required=True, help="RMS rail voltage (V)")
     add.add_argument("--oracle", required=True, help="Operator-reported oracle result")
     add.add_argument("--capture", type=str.lower, choices=("true", "false", "unknown"),
-                     required=True, help="Operator-reported capture return value")
+                     required=True, help="Reported capture API return: true=timeout, "
+                     "false=no timeout; not an oracle verdict")
     add.add_argument("--output-mode", default="unknown", help="Reported output mode")
     for flag in ("--hp-state", "--lp-state-after-test"):
         add.add_argument(flag, type=str.lower, choices=("true", "false", "unknown"),
