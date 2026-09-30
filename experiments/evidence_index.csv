@@ -1,0 +1,1 @@
+run_id,timestamp,experiment,ext_offset,repeat,oracle_result,capture_return,siglent_min_v,siglent_mean_v,siglent_rms_v,rail_droop_mv,measurement_file,saleae_file,husky_trace_file,siglent_image_file,notes_file,sha256_manifest,notes

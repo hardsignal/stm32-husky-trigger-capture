@@ -137,6 +137,63 @@ python3 -m py_compile siglent_read.py siglent_log.py rail_droop_log.py test_sigl
 python3 -m unittest -v test_siglent_read test_siglent_log
 ```
 
+## Offline bench evidence index
+
+[evidence_index.py](evidence_index.py) maintains
+[experiments/evidence_index.csv](experiments/evidence_index.csv) without importing
+instrument code or contacting equipment. The initial index is header-only: no
+run or missing artifact has been invented. `init` preserves an existing index;
+`add`, `validate`, `summary`, and `hash` operate only on local files.
+
+Preview an association using the reported scalar values (confirm these belong
+to the same run before recording it; the example itself is not new evidence):
+
+```bash
+python3 evidence_index.py init
+python3 evidence_index.py add --run-id scalar-check-20260930-01 --experiment "STM32 CH1 rail scalars" --ext-offset 200 --repeat 8 --oracle-result PASS --capture-return false --siglent-min-v 3.12 --siglent-mean-v 3.19 --siglent-rms-v 3.19 --rail-droop-mv 80.00 --measurement-file experiments/rail_droop_results.csv --notes-file experiments/2026-09-30-rail-droop-characterization.md --notes "Confirm association with measurement timestamp 2026-09-30T04:36:50+00:00; waveform evidence not supplied" --dry-run
+```
+
+After checking the association and notes, omit `--dry-run` to append. Supply
+`--timestamp` with a known ISO 8601 time including timezone if available;
+otherwise the timestamp records indexing time, not acquisition time. Identify
+the source CSV row by timestamp/row number in `--notes`; `--measurement-file`
+links the source file but does not infer a row match or import its measurements.
+
+Optional `--saleae-file`, `--husky-trace-file`, `--siglent-image-file`, and
+`--notes-file` paths must name existing files within the repository. Paths are
+stored relative to the repository root, independent of the working directory.
+Blank fields mean not supplied, not zero or PASS. No placeholder artifact paths
+are created. Measurements must be finite and offset/repeat nonnegative integers.
+The index records the supplied **IDLE - MIN rail droop**; it does not substitute
+the Siglent reader's **MEAN - MIN** value or infer an idle voltage. These scalar
+observations do not prove a resolved transient waveform or successful fault injection.
+
+For an actually added run:
+
+```bash
+python3 evidence_index.py hash --run-id scalar-check-20260930-01
+python3 evidence_index.py validate
+python3 evidence_index.py summary
+```
+
+`hash` writes/updates `experiments/evidence_manifests/<run_id>.sha256.json` and
+the index's `sha256_manifest` link. It hashes supplied evidence files, including
+the entire measurement file when linked, without modifying them. `validate`
+checks recorded manifests against current content. Appending to a linked CSV
+will therefore make its old file hash stale. Review changes before explicitly
+running `hash` again; refreshing replaces the old manifest. Preserve checkpoint
+versions in Git if historical hashes matter. Hashes establish file integrity,
+not measurement provenance or physical validity. Do not edit evidence while
+hashing or run concurrent index writers. A failed index update after a manifest
+write can be retried with the same `hash` command.
+
+Offline tests use only synthetic files in temporary repositories:
+
+```bash
+python3 -m py_compile evidence_index.py test_evidence_index.py
+python3 -m unittest -v test_evidence_index
+```
+
 ## Current findings
 
 - Operator-reported timing validation and rail observations provide a baseline
