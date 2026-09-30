@@ -33,6 +33,34 @@ the aggregate observations above were not converted into test rows. The
 [report](rail_droop_report.md). The example below remains usage syntax; matching
 values alone do not establish the logged row's provenance.
 
+## Ethernet SCPI connectivity — 2026-09-30
+
+Operator-reported bench observation: the Siglent SDS1104X-U at `192.168.1.170`
+responded successfully to `*IDN?` and CH1 `C1:PAVA? MIN`, `C1:PAVA? MEAN`, and
+`C1:PAVA? RMS` queries on 2026-09-30. The operator observed the following identity
+reply and CH1 values in this session:
+
+```text
+*IDN?:
+Siglent Technologies,SDS1104X-U,SDSAHBAC8R0071,3.2.1.1.5R6
+
+CH1:
+MIN  = 3.12 V
+MEAN = 3.19 V
+RMS  = 3.19 V
+```
+
+These are operator-reported observations. The connection check was not repeated
+during the utility implementation or this documentation update; no additional
+CSV measurement row was added.
+
+[siglent_read.py](../siglent_read.py) queries the three current scalar measurements
+over TCP port 5025. Its droop is **MEAN - MIN**, expressed in mV, whereas the
+offline rail logger uses **idle - MIN**. Sequential queries may span different
+acquisitions. Successful SCPI replies establish reported communication, not a
+resolved rail transient, causal effect, or successful fault injection. Existing
+CSV data and the rail logger's behavior remain unchanged.
+
 ## Offline logging
 
 `rail_droop_log.py` uses only the Python standard library and local CSV files.

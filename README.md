@@ -60,6 +60,44 @@ The [offline logger](rail_droop_log.py) supports `init`, `add`, `summary`,
 [report](experiments/rail_droop_report.md) preserves notes and compares logged
 measurements against the first row.
 
+## Siglent Ethernet SCPI reader
+
+Connect the SDS1104X-U LAN port to the bench network and configure its network
+address on the instrument. Ensure the computer can reach the scope's SCPI TCP
+service (bench defaults: `192.168.1.170:5025`). Configure CH1 and the measurement
+setup manually before reading. [siglent_read.py](siglent_read.py) uses only Python's
+standard library; no PyVISA is needed.
+
+```bash
+python3 siglent_read.py
+python3 siglent_read.py --host 192.168.1.170 --port 5025 --json
+```
+
+The utility sends only `C1:PAVA? MIN`, `C1:PAVA? MEAN`, and `C1:PAVA? RMS`.
+It queries current scalar values without configuring or triggering acquisition.
+It uses a 3-second connection timeout and 3-second reply deadline per query.
+The queries are sequential and need not describe the same acquisition.
+PAVA reply syntax follows the [Siglent programming guide](https://siglentna.com/wp-content/uploads/dlm_uploads/2025/11/SDS1000-SeriesSDS2000XSDS2000X-E_ProgrammingGuide_EN02E.pdf).
+
+Example output (illustrative, not a new measurement):
+
+```text
+MIN=3.120 V  MEAN=3.190 V  RMS=3.190 V  DROOP=70 mV
+```
+
+Here **DROOP = (MEAN - MIN) × 1000 mV**, unlike the rail logger's **idle - MIN**
+definition. JSON keys are `min_v`, `mean_v`, `rms_v`, and `droop_mv` (numbers).
+Do not copy this droop into the logger as an idle-based result. Errors go to stderr
+with a nonzero exit status; no partial result is printed. These scalar readings
+alone do not establish a resolved transient waveform or successful fault injection.
+
+Offline checks, with all socket connections mocked:
+
+```bash
+python3 -m py_compile siglent_read.py test_siglent_read.py
+python3 -m unittest -v test_siglent_read
+```
+
 ## Current findings
 
 - Operator-reported timing validation and rail observations provide a baseline
