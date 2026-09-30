@@ -1,0 +1,2 @@
+timestamp,ext_offset,repeat,output_mode,hp_state,lp_state_after_test,rail_idle_v,rail_min_v,rail_mean_v,rail_rms_v,droop_mv,oracle_result,capture_return,notes
+2026-09-30T04:36:50+00:00,200,8,enable_only,false,false,3.20,3.12,3.20,3.20,80.00,PASS,false,Siglent CH1 rail measurement; no oracle anomaly observed
