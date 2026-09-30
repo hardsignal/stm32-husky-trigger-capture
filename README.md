@@ -196,6 +196,10 @@ python3 -m unittest -v test_evidence_index
 
 ## Current findings
 
+See the [2026-09-30 bench checkpoint](experiments/2026-09-30-bench-checkpoint.md)
+for operator-verified Siglent trigger correction, scalar baseline ranges, the
+controlled USB stability sequence, and deferred direct timing verification.
+
 - Operator-reported timing validation and rail observations provide a baseline
   for further measurement; no oracle anomaly was reported.
 - Latest operator-reported safe state: **HP=False, LP=False**. The documented
