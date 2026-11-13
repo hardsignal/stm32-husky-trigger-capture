@@ -1,5 +1,21 @@
 # Hardsignal Labs — STM32/Husky Characterization
 
+## Project status — Closed (November 2026)
+
+Project 3 is closed with documented experimental limitations.
+
+Firmware instrumentation, SWD debugging, GPIO timing,
+and acquisition workflows were demonstrated.
+
+Repeated measurements did not establish a reproducible
+workload-dependent power signature. No successful fault
+injection was demonstrated.
+
+A subsequent NUCLEO power fault is suspected; its root
+cause remains unconfirmed.
+
+See the [Project 3 closeout report](experiments/2026-11-13-project-3-closeout.md).
+
 Independent hardware-security research by Maciej Duranczyk on owned lab hardware.
 This project combines synchronized acquisition, a firmware result oracle, and
 manual rail measurements. Bench observations below are operator-reported.
